@@ -1,4 +1,4 @@
-<?php
+<?php defined('SYSPATH') or die('No direct script access.');
 
 /**
  * Description of WBNSelectMenu
@@ -13,7 +13,27 @@ class WBNSelectMenu extends WBNFormField {
         parent::__construct($name, $label, NULL);
         $this->options = array();
     }
+    
+    protected function process_rules() {
+        // validate required
+        if (isset($this->_rules['required'])) {
+            if ($this->process_rule_required() === FALSE)
+                return;
+        }
+    }
+    
+    public function process_rule_required() {
+        if ($this->input_value == NULL) {
+            $this->generate_error_message('required');
+            return FALSE;
+        }
 
+        if (trim($this->input_value) == '') {
+            $this->generate_error_message('required');
+            return FALSE;
+        }
+    }
+    
     /**
      * 
      * @return string|null returns error message on failure. NULL otherwise.
@@ -90,5 +110,4 @@ class WBNSelectMenu extends WBNFormField {
 
         return $html;
     }
-
 }

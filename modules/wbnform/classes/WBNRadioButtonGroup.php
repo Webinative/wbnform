@@ -1,4 +1,4 @@
-<?php
+<?php defined('SYSPATH') or die('No direct script access.');
 
 /**
  * @author mageshravi
@@ -24,6 +24,26 @@ class WBNRadioButtonGroup extends WBNFormField {
             'is_checked' => $is_checked,
         );
         return $this;
+    }
+    
+    protected function process_rules() {
+        // validate required
+        if (isset($this->_rules['required'])) {
+            if ($this->process_rule_required() === FALSE)
+                return;
+        }
+    }
+    
+    public function process_rule_required() {
+        if ($this->input_value == NULL) {
+            $this->generate_error_message('required');
+            return FALSE;
+        }
+
+        if (trim($this->input_value) == '') {
+            $this->generate_error_message('required');
+            return FALSE;
+        }
     }
     
     public function autovalidate() {
@@ -77,5 +97,4 @@ class WBNRadioButtonGroup extends WBNFormField {
 
         return $html;
     }
-    
 }

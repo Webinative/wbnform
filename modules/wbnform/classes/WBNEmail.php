@@ -1,33 +1,77 @@
-<?php
+<?php defined('SYSPATH') or die('No direct script access.');
 
 /**
  * Description of WBNEmail
  *
  * @author mageshravi
  */
-class WBNEmail extends WBNFormField {
+class WBNEmail extends WBNFormField implements IwbnProcessRuleRequired{
     
     /** @var boolean turn on or off auto-suggestions */
     protected $autosuggest;
     
     protected $value;
     
+    protected $err_msg = NULL;
+    
     function __construct($name, $label, $placeholder=NULL, $value=NULL) {
         parent::__construct($name, $label, $placeholder);
         $this->value = $value;
     }
     
+    protected function process_rules() {
+        // autovalidate 
+        $this->error = $this->autovalidate();
+        
+        // validate required
+        if (isset($this->_rules['required'])) {
+            if ($this->process_rule_required() === FALSE)
+                return;
+        }
+    }
+
+    public function process_rule_required() {
+        if ($this->input_value == NULL) {
+            $this->generate_error_message('required');
+            return FALSE;
+        }
+
+        if (trim($this->input_value) == '') {
+            $this->generate_error_message('required');
+            return FALSE;
+        }
+    }
+
     /**
      * 
      * @return string|null returns error message on failure or NULL
      */
     protected function autovalidate() {
+        // if input value is NULL or "" return
+        if (is_null($this->input_value) || $this->input_value == "")
+            return;
+        
         $filterResult = filter_var($this->input_value, FILTER_VALIDATE_EMAIL);
-
+        
+        // Set error message
+        if (is_null($this->err_msg))
+            $this->err_msg = $this->label. " should have valid e-mail address";
+        
         if($filterResult == FALSE)
-            return "Not a valid e-mail address!";
+            return $this->err_msg;
         else
             return NULL;
+    }
+    
+    /**
+     * To set custom error message
+     * @param string $msg
+     * @return \WBNEmail
+     */
+    public function error_message($msg) {
+        $this->err_msg = str_replace(':label', $this->label, $msg);
+        
+        return $this;
     }
     
     public function html() {
@@ -74,5 +118,5 @@ class WBNEmail extends WBNFormField {
 
         return $html;
     }
-    
+
 }
