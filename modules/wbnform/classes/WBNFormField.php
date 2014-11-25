@@ -1,4 +1,4 @@
-<?php
+<?php defined('SYSPATH') or die('No direct script access.');
 
 /**
  * Form Field
@@ -15,6 +15,8 @@ abstract class WBNFormField {
     protected $disabled;
     protected $help_block;
     
+    protected $generate_html = TRUE;
+    
     protected $_rules;
     protected $_callbacks;
     protected $_messages;
@@ -27,7 +29,7 @@ abstract class WBNFormField {
      * @param string $label
      * @param string $placeholder
      */
-    protected function __construct($name, $label, $placeholder) {
+    protected function __construct($name, $label=NULL, $placeholder=NULL) {
         $this->name = $name;
         $this->label = $label;
         $this->placeholder = $placeholder;
@@ -91,6 +93,16 @@ abstract class WBNFormField {
         return $this;
     }
     
+    public function do_generate_html($value=NULL) {
+        if(is_null($value))
+            return $this->generate_html;
+        elseif (is_bool($value)) {
+            $this->generate_html = $value;
+        }
+        
+        return $this;
+    }
+    
     public function add_rule($key, $value, $message='') {
         $this->_rules[ $key ] = $value;
         $this->_messages[ $key ] = $message;
@@ -150,49 +162,10 @@ abstract class WBNFormField {
                 $this->input_value = filter_input(INPUT_GET, $this->name);
         }
     }
+    
+    abstract protected function process_rules();
 
-    private function process_rules() {
-        
-        if( $this->_rules == '' OR count($this->_rules) == 0 )
-            return;
-
-        // do autovalidate
-        $this->error = $this->autovalidate();
-        
-        if( isset($this->_rules['required']) ) {
-            if( $this->process_rule_required() === FALSE ) {
-                return;
-            }
-        } else {
-            if( $this->input_value == '') {
-                return;    // not a required value and submitted value is empty
-            }
-        }
-        
-        foreach($this->_rules as $condition => $value) {
-
-            switch($condition) {
-                case 'filter':
-                    if( $this->process_rule_filter($value) === FALSE )
-                        return;
-                    break;
-                case 'min_length':
-                    if( $this->process_rule_min_length($value) === FALSE )
-                        return;
-                    break;
-                case 'max_length':
-                    if( $this->process_rule_max_length($value) === FALSE )
-                        return;
-                    break;
-                case 'regex':
-                    if( $this->process_rule_regex($value) === FALSE )
-                        return;
-                    break;
-            }
-        }
-    }
-
-    private function generate_error_message( $rule, $value=NULL ) {
+    protected function generate_error_message( $rule, $value=NULL ) {
 
         $err_msg = str_replace(':label', $this->label, $this->_messages[ $rule ]);
 
@@ -201,60 +174,7 @@ abstract class WBNFormField {
 
         $this->error = $err_msg;
     }
-
-    private function process_rule_required() {
-
-        if( $this->input_value == NULL ) {
-            $this->generate_error_message('required');
-            return FALSE;
-        }
-
-        if( trim($this->input_value) == '') {
-            $this->generate_error_message('required');
-            return FALSE;
-        }
-    }
-
-    private function process_rule_regex($regex_string) {
-        $arr_options = array(
-                "options" => array(
-                    "regexp" => $regex_string
-                )
-            );
-        
-        if( filter_var($this->input_value, FILTER_VALIDATE_REGEXP, $arr_options) === FALSE ) {
-            $this->generate_error_message('regex');
-            return FALSE;
-        }
-    }
     
-    private function process_rule_filter( $filters ) {
-        
-        if(is_array($filters) == FALSE)
-            $filters = array($filters);
-
-        foreach($filters as $filter) {
-            if( filter_var($this->input_value, $filter) != TRUE ) {
-                $this->generate_error_message ('filter');
-                return FALSE;
-            }
-        }
-    }
-    
-    private function process_rule_min_length($value) {
-        if( strlen($this->input_value) < $value ) {
-            $this->generate_error_message ('min_length', $value);
-            return FALSE;
-        }
-    }
-
-    private function process_rule_max_length($value) {
-        if( strlen($this->input_value) > $value ) {
-            $this->generate_error_message ('max_length', $value);
-            return FALSE;
-        }
-    }
-
     private function process_callbacks() {
 
         if( $this->_callbacks == '' OR count($this->_callbacks) == 0 )
@@ -264,7 +184,7 @@ abstract class WBNFormField {
             try {
                 if(is_array($params)) {
                     // replace :input by the current field's input value
-                    $this->addInputValueToParams($this->input_value, $params);
+                    $this->add_input_value_to_params($this->input_value, $params);
                     
                     $this->error = call_user_func_array ($function, $params);
                 } else {
@@ -276,9 +196,9 @@ abstract class WBNFormField {
         }
     }
     
-    private function addInputValueToParams($input_value, array &$params) {
+    private function add_input_value_to_params($input_value, array &$params) {
         $index = array_search(':input', $params);
-        if($index) {
+        if( $index !== FALSE ) {
             $params[ $index ] = $input_value;
         }
     }

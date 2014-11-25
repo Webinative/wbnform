@@ -1,14 +1,34 @@
-<?php
+<?php defined('SYSPATH') or die('No direct script access.');
 
 /**
  * Description of WBNPassword
  *
  * @author udhayakumar
  */
-class WBNPassword extends WBNFormField {
+class WBNPassword extends WBNFormField implements IwbnProcessRuleRequired {
     
     function __construct($name, $label, $placeholder=NULL) {
         parent::__construct($name, $label, $placeholder);
+    }
+    
+    protected function process_rules() {
+        // validate required
+        if (isset($this->_rules['required'])) {
+            if ($this->process_rule_required() === FALSE)
+                return;
+        }
+    }
+    
+    public function process_rule_required() {
+        if ($this->input_value == NULL) {
+            $this->generate_error_message('required');
+            return FALSE;
+        }
+
+        if (trim($this->input_value) == '') {
+            $this->generate_error_message('required');
+            return FALSE;
+        }
     }
     
     protected function autovalidate() {

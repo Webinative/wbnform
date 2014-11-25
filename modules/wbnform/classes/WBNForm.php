@@ -1,4 +1,4 @@
-<?php
+<?php defined('SYSPATH') or die('No direct script access.');
 
 /**
  * Description of Form
@@ -17,7 +17,7 @@ class WBNForm {
     public $name=NULL;
     
     private $_fields;
-    
+
     /** @var string Submit button label */
     public $submit_label;
 
@@ -44,15 +44,15 @@ class WBNForm {
         if(isset($this->_fields[ $field_name ]))
             return $this->_fields[ $field_name ];
     }
-
+    
     public function html() {
         
         $html = '<form enctype="multipart/form-data" role="form" id="'.$this->name.'" action="'. $this->action .'" method="'. $this->method .'">';
         
-        foreach($this->_fields as $field) { /* @var $field Field */
-            $html .= $field->html();
+        foreach($this->_fields as $field) { /* @var $field WBNFormField */
+            if($field->do_generate_html())
+                $html .= $field->html();
         }
-
         $html .= '<button type="submit" class="btn btn-primary">'. $this->submit_label .'</button>';
 
         $html .= '</form>';
@@ -65,7 +65,8 @@ class WBNForm {
         $method = strtolower( $_SERVER['REQUEST_METHOD'] );
 
         $_postData = filter_input_array(INPUT_POST);
-        if($method != $this->method OR empty($_postData)) {
+        
+        if($method != $this->method OR (empty($_postData) AND empty($_FILES))) {
             Log::instance()->add(Log::DEBUG, 'Invalid form submission!');
             return false;
         }

@@ -1,11 +1,11 @@
-<?php
+<?php defined('SYSPATH') or die('No direct script access.');
 
 /**
  * Description of CheckboxGroup
  *
  * @author mageshravi
  */
-class WBNCheckboxGroup extends WBNFormField {
+class WBNCheckboxGroup extends WBNFormField implements IwbnProcessRuleRequired{
     
     /** @var array */
     protected $boxes;
@@ -53,6 +53,26 @@ class WBNCheckboxGroup extends WBNFormField {
                 break;
             default:
                 $this->input_value = filter_input(INPUT_GET, $this->name);
+        }
+    }
+    
+    protected function process_rules() {
+        // validate required
+        if (isset($this->_rules['required'])) {
+            if ($this->process_rule_required() === FALSE)
+                return;
+        }
+    }
+    
+    public function process_rule_required() {
+        if ($this->input_value == NULL) {
+            $this->generate_error_message('required');
+            return FALSE;
+        }
+
+        if (trim($this->input_value) == '') {
+            $this->generate_error_message('required');
+            return FALSE;
         }
     }
     
@@ -111,5 +131,5 @@ class WBNCheckboxGroup extends WBNFormField {
 
         return $html;
     }
-    
+
 }
